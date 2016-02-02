@@ -188,13 +188,14 @@ l_shelve_index(lua_State *L)
 	datum d, k;
 	anydb_t *dbh;
 	const char *datap;
+	size_t slen_aux;
 	
 	ASSERT(L);
 	ASSERT(lua_isuserdata(L, -2));
 
-	dbh 		= (anydb_t*) lua_touserdata(L, -2);
-	k.dptr  = (char*)    lua_tostring(L, -1);
-	k.dsize	= (int)      lua_strlen(L, -1);
+	dbh 	= (anydb_t*) lua_touserdata(L, -2);
+	k.dptr  = (char*)    lua_tolstring(L, -1, &slen_aux);
+	k.dsize	= (int)      slen_aux;
 
 	d = anydb_fetch(*dbh, k);
 	lua_pop(L, 2);
@@ -219,14 +220,15 @@ l_shelve_nindex(lua_State *L)
 {
 	datum k, d = { NULL, 0 };
 	shelve_file *udata;
+	size_t slen_aux;
 	
 	ASSERT(L);
 	ASSERT(lua_gettop(L) == 3);
 	ASSERT(lua_isuserdata(L, -3));
 
 	udata 	= (shelve_file*) lua_touserdata(L, -3);
-	k.dptr  = (char*)        lua_tostring(L, -2), 
-	k.dsize = (int)	         lua_strlen(L, -2);
+	k.dptr  = (char*)        lua_tolstring(L, -2, &slen_aux), 
+	k.dsize = (int)	         slen_aux;
 
 	if (udata->rdonly) {
 		luaL_error(L, "cannot modify read-only shelf datafile");

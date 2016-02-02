@@ -162,10 +162,11 @@ shelve_marshal(lua_State *L, char **data, int *bytes)
 			slen = 1 + sizeof(size_t);
 			{
 				char __d[slen];
+				const char *lstr = lua_tolstring (L, -1, &slen_aux);
 				__d[0] = MARSH_STRING;
-				*((size_t*)(&__d[1])) = slen_aux = lua_strlen(L, -1);
+				*((size_t*)(&__d[1])) = slen_aux;
 				STOR(*data, *bytes, __d, slen);
-				STOR(*data, *bytes, lua_tostring(L, -1), slen_aux);
+				STOR(*data, *bytes, lstr, slen_aux);
 			}
 			break;
 		case LUA_TTABLE: /* Encode a table. */
