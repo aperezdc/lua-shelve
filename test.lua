@@ -1,27 +1,13 @@
 
-function printf(fmt, ...)
+local function printf(fmt, ...)
 	io.stdout:write(string.format(fmt, unpack(arg)))
 end
 
-system = os.getenv("OS")
-if (system=="LINUX") then
-	suffix = "so"
-elseif (system=="OSX") then
-	suffix = "dylib"
-else
-	suffix = "dll"
-end
-
-printf("Loading 'shelve.%s'\n", suffix)
-loadlib("./shelve." .. suffix , "l_shelve_init")()
-
+package.cpath = "./?.so"
+local shelve = assert(require("shelve"))
 print("Opening 'db'")
-db, err = shelve.open("test.db")
 
-if (not db) then
-	print("Could not open: " .. err)
-	os.exit()
-end
+local db = assert(shelve.open("test.db"))
 
 a = "one"
 b = "two"
