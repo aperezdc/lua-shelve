@@ -1,7 +1,7 @@
 
 /*
  * Lua interface of the 'shelve' module.
- * Copyright (C) 2003 Adrian Perez de Castro
+ * Copyright (C) 2003-2016 Adrian Perez de Castro <aperez@igalia.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
