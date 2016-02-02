@@ -49,9 +49,9 @@ int l_shelve_tostring(lua_State*);
 
 /* Lua userdata type */
 typedef struct shelve_file_t {
-	anydb_t dbf;
-	char *fname;
-	int  rdonly;
+    anydb_t dbf;
+    char *fname;
+    int  rdonly;
 } shelve_file;
 
 /* Metatable items */
@@ -60,255 +60,253 @@ typedef struct shelve_file_t {
 #define SHELVE_META_ITEMS 5
 static luaL_Reg meta[] =
 {
-	{ "__index",		l_shelve_index	 	},
-	{ "__newindex",	l_shelve_nindex	 	},
-	{ "__call",			l_shelve_trv		 	},
-	{ "__gc",				l_shelve_gc			 	},
-	{ "__tostring", l_shelve_tostring },
+    { "__index",    l_shelve_index    },
+    { "__newindex", l_shelve_nindex   },
+    { "__call",     l_shelve_trv      },
+    { "__gc",       l_shelve_gc       },
+    { "__tostring", l_shelve_tostring },
 };
 
 
 LUALIB_API int
 luaopen_shelve(lua_State *L)
 {
-	unsigned i;
+    unsigned i;
 
-	ASSERT(L);
-	
-	/* This is more polite to loadmodule and luacheia */
-	if (lua_gettop(L) == 0) {
-		lua_pushstring(L, "shelve");
-	} else {
-		luaL_checktype(L, -1, LUA_TSTRING);
-	}
+    ASSERT(L);
 
-	/* Create the namespace table. */
-	lua_newtable(L);
-	
-	/* Create the metatable. */
-	lua_pushstring(L, SHELVE_REGISTRY_KEY);
-	lua_newtable(L);
-	for (i=0 ; i<SHELVE_META_ITEMS ; i++) {
-		lua_pushstring(L, meta[i].name);
-		lua_pushcfunction(L, meta[i].func);
-		lua_rawset(L, -3);
-	}
-	lua_settable(L, LUA_REGISTRYINDEX);
+    /* This is more polite to loadmodule and luacheia */
+    if (lua_gettop(L) == 0) {
+        lua_pushstring(L, "shelve");
+    } else {
+        luaL_checktype(L, -1, LUA_TSTRING);
+    }
 
-	/* Set the "open" function. */
-	lua_pushstring(L, "open");
-	lua_pushcfunction(L, l_shelve_open);
-	lua_rawset(L, -3);
+    /* Create the namespace table. */
+    lua_newtable(L);
 
-	/* Set the marshal/unmarshal functions. */
-	lua_pushstring(L, "marshal");
-	lua_pushcfunction(L, l_shelve_marshal);
-	lua_rawset(L, -3);
-	lua_pushstring(L, "unmarshal");
-	lua_pushcfunction(L, l_shelve_unmarshal);
-	lua_rawset(L, -3);
+    /* Create the metatable. */
+    lua_pushstring(L, SHELVE_REGISTRY_KEY);
+    lua_newtable(L);
+    for (i=0 ; i<SHELVE_META_ITEMS ; i++) {
+        lua_pushstring(L, meta[i].name);
+        lua_pushcfunction(L, meta[i].func);
+        lua_rawset(L, -3);
+    }
+    lua_settable(L, LUA_REGISTRYINDEX);
 
-	return 1;
+    /* Set the "open" function. */
+    lua_pushstring(L, "open");
+    lua_pushcfunction(L, l_shelve_open);
+    lua_rawset(L, -3);
+
+    /* Set the marshal/unmarshal functions. */
+    lua_pushstring(L, "marshal");
+    lua_pushcfunction(L, l_shelve_marshal);
+    lua_rawset(L, -3);
+    lua_pushstring(L, "unmarshal");
+    lua_pushcfunction(L, l_shelve_unmarshal);
+    lua_rawset(L, -3);
+
+    return 1;
 }
 
 
 int
 l_shelve_open(lua_State *L)
 {
-	int flags 				 = ANYDB_WRITE;
-	char *filename 		 = NULL;
-	shelve_file *udata = NULL;
-	const char *rwmode = NULL;
-	anydb_t dbh;
-	int n;
+    int flags = ANYDB_WRITE;
+    char *filename = NULL;
+    shelve_file *udata = NULL;
+    const char *rwmode = NULL;
+    anydb_t dbh;
+    int n;
 
-	ASSERT(L);
+    ASSERT(L);
 
-	n = lua_gettop(L);
-	/* Check arguments. */
-	if ((n != 1) && (n != 2)) {
-		luaL_error(L, "function takes one or two arguments");
-	}
+    n = lua_gettop(L);
+    /* Check arguments. */
+    if ((n != 1) && (n != 2)) {
+        luaL_error(L, "function takes one or two arguments");
+    }
 
-	/* Check & get second argument (if needed). */
-	if (n == 2) {
-		rwmode = luaL_checkstring(L, -1);
-		flags  = (*rwmode == 'r') ? ANYDB_READ : ANYDB_WRITE;
-		lua_pop(L, 1);
-	}
-	
-	/* Check & get DB file name. */
-	filename = xstrdup(luaL_checkstring(L, -1));
-	lua_pop(L, 1);
+    /* Check & get second argument (if needed). */
+    if (n == 2) {
+        rwmode = luaL_checkstring(L, -1);
+        flags  = (*rwmode == 'r') ? ANYDB_READ : ANYDB_WRITE;
+        lua_pop(L, 1);
+    }
 
-	/* Open the DB and remove filename from the stack. */
-	if ( !(dbh = anydb_open(filename, flags)) ) {
-		lua_pushnil(L);
-		lua_pushstring(L, strerror(errno));
-		return 2;
-	}
+    /* Check & get DB file name. */
+    filename = xstrdup(luaL_checkstring(L, -1));
+    lua_pop(L, 1);
 
-	/* Configure returned userdata. */
-	udata = (shelve_file*) lua_newuserdata(L, sizeof(shelve_file));
-	udata->fname	= filename;
-	udata->dbf 		= dbh;
-	udata->rdonly = (flags == ANYDB_READ);
+    /* Open the DB and remove filename from the stack. */
+    if ( !(dbh = anydb_open(filename, flags)) ) {
+        lua_pushnil(L);
+        lua_pushstring(L, strerror(errno));
+        return 2;
+    }
 
-	/* Associate metatable with userdata. */
-	lua_pushstring(L, SHELVE_REGISTRY_KEY);
-	lua_gettable(L, LUA_REGISTRYINDEX);
-	lua_setmetatable(L, -2);
-	lua_remove(L, -2);
-	
-	return 1;
+    /* Configure returned userdata. */
+    udata = (shelve_file*) lua_newuserdata(L, sizeof(shelve_file));
+    udata->fname  = filename;
+    udata->dbf    = dbh;
+    udata->rdonly = (flags == ANYDB_READ);
+
+    /* Associate metatable with userdata. */
+    lua_pushstring(L, SHELVE_REGISTRY_KEY);
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    lua_setmetatable(L, -2);
+    lua_remove(L, -2);
+
+    return 1;
 }
 
 
 int
 l_shelve_index(lua_State *L)
 {
-	datum d, k;
-	anydb_t *dbh;
-	const char *datap;
-	size_t slen_aux;
-	
-	ASSERT(L);
-	ASSERT(lua_isuserdata(L, -2));
+    datum d, k;
+    anydb_t *dbh;
+    const char *datap;
+    size_t slen_aux;
 
-	dbh 	= (anydb_t*) lua_touserdata(L, -2);
-	k.dptr  = (char*)    lua_tolstring(L, -1, &slen_aux);
-	k.dsize	= (int)      slen_aux;
+    ASSERT(L);
+    ASSERT(lua_isuserdata(L, -2));
 
-	d = anydb_fetch(*dbh, k);
-	lua_pop(L, 2);
+    dbh     = (anydb_t*) lua_touserdata(L, -2);
+    k.dptr  = (char*) lua_tolstring(L, -1, &slen_aux);
+    k.dsize = (int) slen_aux;
 
-	if (!d.dptr) {
-		lua_pushnil(L);
-	}
-	else {
-		datap = d.dptr;
+    d = anydb_fetch(*dbh, k);
+    lua_pop(L, 2);
 
-		if (!shelve_unmarshal(L, &datap)) {
-			luaL_error(L, "bad format in encoded data");
-		}
-		xfree(d.dptr);
-	}
-	return 1;
+    if (!d.dptr) {
+        lua_pushnil(L);
+    }
+    else {
+        datap = d.dptr;
+
+        if (!shelve_unmarshal(L, &datap)) {
+            luaL_error(L, "bad format in encoded data");
+        }
+        xfree(d.dptr);
+    }
+    return 1;
 }
 
 
 int
 l_shelve_nindex(lua_State *L)
 {
-	datum k, d = { NULL, 0 };
-	shelve_file *udata;
-	size_t slen_aux;
-	
-	ASSERT(L);
-	ASSERT(lua_gettop(L) == 3);
-	ASSERT(lua_isuserdata(L, -3));
+    datum k, d = { NULL, 0 };
+    shelve_file *udata;
+    size_t slen_aux;
 
-	udata 	= (shelve_file*) lua_touserdata(L, -3);
-	k.dptr  = (char*)        lua_tolstring(L, -2, &slen_aux), 
-	k.dsize = (int)	         slen_aux;
+    ASSERT(L);
+    ASSERT(lua_gettop(L) == 3);
+    ASSERT(lua_isuserdata(L, -3));
 
-	if (udata->rdonly) {
-		luaL_error(L, "cannot modify read-only shelf datafile");
-	}
-		
-	if (lua_isnil(L, -1)) {
-		/* Remove key in database. */
-		anydb_delete(udata->dbf, k);
-		lua_pop(L, 3);
-		return 0;
-	}
-	
-	if (!shelve_marshal(L, &d.dptr, &d.dsize)) {
-		luaL_error(L, "cannot encode data");
-	}
+    udata   = (shelve_file*) lua_touserdata(L, -3);
+    k.dptr  = (char*) lua_tolstring(L, -2, &slen_aux);
+    k.dsize = (int) slen_aux;
 
-	if (anydb_store(udata->dbf, k, d, ANYDB_REPLACE) != 0) {
-		xfree(d.dptr);
-		luaL_error(L, "cannot update item in data file");
-	}
-	xfree(d.dptr);
+    if (udata->rdonly) {
+        luaL_error(L, "cannot modify read-only shelf datafile");
+    }
 
-	lua_pop(L, 3);
-	return 0;
+    if (lua_isnil(L, -1)) {
+        /* Remove key in database. */
+        anydb_delete(udata->dbf, k);
+        lua_pop(L, 3);
+        return 0;
+    }
+
+    if (!shelve_marshal(L, &d.dptr, &d.dsize)) {
+        luaL_error(L, "cannot encode data");
+    }
+
+    if (anydb_store(udata->dbf, k, d, ANYDB_REPLACE) != 0) {
+        xfree(d.dptr);
+        luaL_error(L, "cannot update item in data file");
+    }
+    xfree(d.dptr);
+
+    lua_pop(L, 3);
+    return 0;
 }
 
 
 int
 l_shelve_trv(lua_State *L)
 {
-	anydb_t *dbh;
-	datum k, tk;
-	
-	ASSERT(L);
-	ASSERT(lua_gettop(L) == 1);
-	ASSERT(lua_isuserdata(L, -1));
+    anydb_t *dbh;
+    datum k, tk;
 
-	dbh = (anydb_t*) lua_touserdata(L, -1);
-	lua_pop(L, 1);
+    ASSERT(L);
+    ASSERT(lua_gettop(L) == 1);
+    ASSERT(lua_isuserdata(L, -1));
 
-	/*
-	 * A table containing all the keys is returned, all the keys
-	 * are assigned to 'true' boolean values. This is useful to
-	 * write Lua code similar to the following:
-	 *
-	 *    db = shelve.open("test.db")
-	 *    for key in db() do
-	 *			print("key: " .. key, "data: " .. db[key])
-	 *		end
-	 *
-	 */
-	lua_newtable(L);
-	for (k=anydb_firstkey(*dbh) ;
-			 k.dptr ;
-			 tk=k, k=anydb_nextkey(*dbh, k), xfree(tk.dptr))
-	{
-		lua_pushlstring(L, k.dptr, (size_t) k.dsize);
-		lua_pushboolean(L, 1);
-		lua_rawset(L, -3);
-	}
+    dbh = (anydb_t*) lua_touserdata(L, -1);
+    lua_pop(L, 1);
 
-	return 1;
+    /*
+     * A table containing all the keys is returned, all the keys
+     * are assigned to 'true' boolean values. This is useful to
+     * write Lua code similar to the following:
+     *
+     *    db = shelve.open("test.db")
+     *    for key in db() do
+     *        print("key: " .. key, "data: " .. db[key])
+     *    end
+     *
+     */
+    lua_newtable(L);
+    for (k=anydb_firstkey(*dbh) ;
+         k.dptr ;
+         tk=k, k=anydb_nextkey(*dbh, k), xfree(tk.dptr))
+    {
+        lua_pushlstring(L, k.dptr, (size_t) k.dsize);
+        lua_pushboolean(L, 1);
+        lua_rawset(L, -3);
+    }
+
+    return 1;
 }
 
 
 int
 l_shelve_gc(lua_State *L)
 {
-	shelve_file *udata;
-	
-	ASSERT(L);
-	ASSERT(lua_gettop(L) == 1);
-	ASSERT(lua_isuserdata(L, -1));
+    shelve_file *udata;
 
-	udata = (shelve_file*) lua_touserdata(L, -1);
-	if (!udata->rdonly) anydb_reorganize(udata->dbf);
-	anydb_close(udata->dbf);
-	xfree(udata->fname);
-	lua_pop(L, 1);
-	return 0;
+    ASSERT(L);
+    ASSERT(lua_gettop(L) == 1);
+    ASSERT(lua_isuserdata(L, -1));
+
+    udata = (shelve_file*) lua_touserdata(L, -1);
+    if (!udata->rdonly) anydb_reorganize(udata->dbf);
+    anydb_close(udata->dbf);
+    xfree(udata->fname);
+    lua_pop(L, 1);
+    return 0;
 }
 
 
 int
 l_shelve_tostring(lua_State *L)
 {
-	shelve_file *udata;
+    shelve_file *udata;
 
-	ASSERT(L);
-	ASSERT(lua_gettop(L) == 1);
-	ASSERT(lua_isuserdata(L, -1));
+    ASSERT(L);
+    ASSERT(lua_gettop(L) == 1);
+    ASSERT(lua_isuserdata(L, -1));
 
-	udata = (shelve_file*) lua_touserdata(L, -1);
-	lua_pushfstring(L, "shelf (%s, %s)", 
-			udata->fname, 
-			(udata->rdonly) ? "ro" : "rw"
-			);
-	lua_remove(L, -2);
-	return 1;
+    udata = (shelve_file*) lua_touserdata(L, -1);
+    lua_pushfstring(L, "shelf (%s, %s)", udata->fname,
+                    (udata->rdonly) ? "ro" : "rw");
+    lua_remove(L, -2);
+    return 1;
 }
 

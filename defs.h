@@ -1,7 +1,6 @@
-
 /*
  * Common definitions.
- * Copyright (C) 2003 Adrian Perez de Castro
+ * Copyright (C) 2003-2016 Adrian Perez de Castro <aperez@igalia.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -27,7 +26,7 @@
 #define ASSERT_EXIT  exit(-1)
 
 /*
- * Action to perform on assertion fail. May be 
+ * Action to perform on assertion fail. May be
  * ASSERT_EXIT or ASSERT_ABORT.
  */
 #ifndef ASSERT_FAIL_ACTION
@@ -43,27 +42,25 @@
 #if defined(_DEBUG) || defined(DEBUG)
 # ifdef __GNUC__
 #  include <stdio.h>
-	 extern void abort(void);
-	 /* Extended macro, used with GCC */ 
+    extern void abort(void);
+    /* Extended macro, used with GCC */
 #  define ASSERT(__expr) \
-			( \
-				(__expr) ? (void)0 \
-				: (fprintf(stderr, "%s: function %s: line %u:\n" \
-							     "   assertion '%s' failed\n", \
-									 __FILE__, __PRETTY_FUNCTION__, __LINE__, \
-									  #__expr), fflush(stderr), \
-					 ASSERT_FAIL_ACTION) \
-			)
+    ((__expr) ? (void)0 \
+              : (fprintf(stderr, "%s: function %s: line %u:\n" \
+                                 "   assertion '%s' failed\n", \
+                                __FILE__, __PRETTY_FUNCTION__, __LINE__, \
+                                #__expr), fflush(stderr), \
+                ASSERT_FAIL_ACTION))
 # else  /* __GNUC__ */
-	 /* Standard macro, used with other compilers */
+   /* Standard macro, used with other compilers */
 #  define DEBUG
 #  include <assert.h>
 #  define ASSERT assert
 # endif /* __GNUC__ */
-	/* 
-	 * Define to empty when not compiling with debugging
-	 * enabled.
-	 */
+   /*
+    * Define to empty when not compiling with debugging
+    * enabled.
+    */
 #else  /* (_DEBUG || DEBUG) */
 # define ASSERT(__ignore) ((void)0)
 #endif /* (_DEBUG || DEBUG) */
@@ -75,8 +72,8 @@
  * and variables is done correctly.
  */
 #if defined(__cplusplus) || defined(c_plusplus)
-# define BEGIN_DECLS	extern "C" {
-# define END_DECLS		}
+# define BEGIN_DECLS  extern "C" {
+# define END_DECLS    }
 #else
 # define BEGIN_DECLS
 # define END_DECLS
@@ -87,8 +84,8 @@
  * Chain of fools to detect wether we are using Win32.
  */
 #if defined(__WINDOWS__) || defined(_WINDOWS) || defined(_Windows) || \
-		defined(__WIN32__)   || defined(_WIN32)   || defined(WIN32)    || \
-		defined(__NT__) || defined(__NT_DLL__) || defined(__WINDOWS_386__)
+    defined(__WIN32__)   || defined(_WIN32)   || defined(WIN32)    || \
+    defined(__NT__) || defined(__NT_DLL__) || defined(__WINDOWS_386__)
 # define PLAT_WIN32
 #else
 # define PLAT_POSIX
@@ -100,7 +97,7 @@
  * the world. Under Win32 it's expanded to export symbols in DLLs
  * when appropiate.
  */
-#if	defined(PLAT_WIN32) && defined(BUILD_DLL)
+#if defined(PLAT_WIN32) && defined(BUILD_DLL)
 # define API extern __declspec(dllexport)
 #elif defined(PLAT_WIN32) && defined(USE_DLL)
 # define API extern __declspec(dllimport)
@@ -115,7 +112,7 @@
 extern void exit();
 #include <stdio.h>
 #define __die(__str) \
-	( fprintf(stderr, "fatal: %s\n", __str), exit(-1) )
+    (fprintf(stderr, "fatal: %s\n", __str), exit(-1))
 
 /*
  * The xmalloc(), xrealloc() and xfree() act as expected, but they
@@ -135,17 +132,17 @@ extern void free();
 
 static INLINE void* xmalloc(size_t sz)
 {
-	register void *p = malloc(sz);
-	return (p ? p : (__die("out of memory"), (void*)0));
+    register void *p = malloc(sz);
+    return (p ? p : (__die("out of memory"), (void*)0));
 }
 
 #define xrealloc(__p, __nsz) \
-		( (__p) = realloc(__p, __nsz), (__p) ? __p : (__die("out of memory"), (void*)0) )
+    ((__p) = realloc(__p, __nsz), (__p) ? __p : (__die("out of memory"), (void*)0))
 
 #define xfree(__p) \
-	( free(__p), (__p) = NULL )
+    (free(__p), (__p) = NULL)
 
-	
+
 /*
  * strdup() replacement
  */
@@ -154,22 +151,18 @@ static INLINE void* xmalloc(size_t sz)
 #endif
 
 #if defined(HAVE_STRDUP) && defined(__GNUC__)
-# define xstrdup(__strp) 																		\
-   ({	char *__$strp = strdup(__strp); 											\
-  		(__$strp) ? : (__die("out of memory"), (char*)0); })
+# define xstrdup(__strp) \
+    ({ char *__$strp = strdup(__strp); \
+       (__$strp) ? : (__die("out of memory"), (char*)0); })
 #else
 # ifdef __GNUC__
-#  define xstrdup(__strp)                                  	\
-		({const char* __$strp = __strp;                        	\
-			strcpy(                                              	\
-				(char*) xmalloc(sizeof(char)*(strlen(__$strp)+1)), 	\
-				__$strp); })
+#  define xstrdup(__strp) \
+    ({ const char* __$strp = __strp; \
+       strcpy((char*) xmalloc(sizeof(char)*(strlen(__$strp)+1)), __$strp); })
 # else
 static INLINE char* xstrdup(const char *strp)
 {
-	return strcpy(
-			(char*) xmalloc(sizeof(char) * (strlen(strp) + 1)), 
-			strp);
+    return strcpy((char*) xmalloc(sizeof(char) * (strlen(strp) + 1)), strp);
 }
 # endif
 #endif

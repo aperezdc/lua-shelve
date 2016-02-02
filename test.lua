@@ -14,22 +14,22 @@ b = "two"
 c = "three"
 
 db.num = 1234567890 -- a number
-db.str = "a string"	-- a string
-db.t1  = {}					-- an empty table
-db.t2  = { s="S" }	-- table with one element
-db.t3  = { a,b,c }	-- indexed table, multiple elements
+db.str = "a string" -- a string
+db.t1  = {}         -- an empty table
+db.t2  = { s="S" }  -- table with one element
+db.t3  = { a,b,c }  -- indexed table, multiple elements
 
-db.nested = 				-- nested tables
-	{
-		level = a,
-		nest	= {
-			level = b,
-			nest	= {
-				level = c,
-				nest	= "nothing"
-			}
-		}
-	}
+db.nested =         -- nested tables
+   {
+      level = a,
+      nest  = {
+         level = b,
+         nest  = {
+            level = c,
+            nest  = "nothing"
+         }
+      }
+   }
 
 printf("Number encoding... ")
 assert(type(db.num) == "number")
@@ -58,8 +58,8 @@ printf("ok\nLarge file storing... ")
 
 fd, err = io.open("LICENSE", "r")
 if (not fd) then
-	print(err)
-	os.exit()
+   print(err)
+   os.exit()
 end
 lgpl_license = fd:read("*a")
 fd:close()
