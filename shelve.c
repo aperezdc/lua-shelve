@@ -58,7 +58,7 @@ typedef struct shelve_file_t {
 
 
 #define SHELVE_META_ITEMS 5
-static luaL_reg meta[] =
+static luaL_Reg meta[] =
 {
 	{ "__index",		l_shelve_index	 	},
 	{ "__newindex",	l_shelve_nindex	 	},
@@ -68,24 +68,8 @@ static luaL_reg meta[] =
 };
 
 
-/* Lua loadmodule support */
-
-LUALIB_API int 
-luaLM_import(lua_State* L)
-{
-	return l_shelve_init(L);
-}
-
-
-LUALIB_API const char* 
-luaLM_version(void)
-{
-	return LUA_VERSION;
-}
-
-
-LUALIB_API int 
-l_shelve_init(lua_State *L)
+LUALIB_API int
+luaopen_shelve(lua_State *L)
 {
 	unsigned i;
 
@@ -123,10 +107,8 @@ l_shelve_init(lua_State *L)
 	lua_pushstring(L, "unmarshal");
 	lua_pushcfunction(L, l_shelve_unmarshal);
 	lua_rawset(L, -3);
-	
-	lua_settable(L, LUA_GLOBALSINDEX);
-	
-	return 0;
+
+	return 1;
 }
 
 
