@@ -4,15 +4,13 @@ sudo: false
 
 env:
   matrix:
-    - LUA="lua 5.1"
-    - LUA="lua 5.2"
-    - LUA="lua 5.3"
-    - LUA="luajit 2.0"
-    - LUA="luajit 2.1"
+    - LUA=lua V=5.1
+    - LUA=lua V=5.2
+    - LUA=lua V=5.3
 
 before_install:
   - pip install hererocks
-  - hererocks here -r^ --$LUA
+  - hererocks here -r^ --$LUA $V
   - export PATH=$PATH:$PWD/here/bin
   - eval `luarocks path --bin`
 
@@ -20,4 +18,4 @@ install:
   - luarocks make
 
 script:
-  - lua test.lua
+  - $LUA test.lua
