@@ -156,3 +156,17 @@ You may use these functions to manually encode and decode data.
 Note that `shelve.marshal()` adds a special mark to the end of an
 encoded bytestream: decoding the concatenation of two encoded
 values will only return the first one.
+
+
+## Known Limitations
+
+- Data files are NOT portable across:
+  - Platforms with different endianness and word sizes.
+  - Different builds of the shelve module when one uses GDBM and the other
+    uses NDBM (this is because they don't use the same internal file format).
+- Functions, userdata and light userdata **cannot** be encoded and stored in
+  a shelf. If you try to encode one of  these you will get an error. In
+  particular, it is not possible to store/marshal regular or `shelve` file
+  handles.
+- Trying to encode a table that has references to itself produces an infinite
+  loop recursion, thus a hang or a stack overflow will occur.
