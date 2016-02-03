@@ -1,9 +1,0 @@
-
-Original auhors:
-	Adrián Pérez de Castro <mobius@iespana.es>
-
-Acknowledgements:
-	Python crew, as most of ideas that make up this module
-	were taken from Python's 'shelve', 'marshal' and 'pickle'
-	modules.
-
