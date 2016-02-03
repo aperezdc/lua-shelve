@@ -1,6 +1,6 @@
-all: prefix
+all: .stamp
 
-.stamp: $(wildcard *.c)
+.stamp: $(wildcard *.c) $(wildcard *.rockspec)
 	luarocks make --pack-binary-rock
 	touch $@
 
