@@ -1,4 +1,3 @@
-
 /*
  * Lua interface of the 'shelve' module.
  * Copyright (C) 2003-2016 Adrian Perez de Castro <aperez@igalia.com>
@@ -29,6 +28,7 @@
 #include <errno.h>
 #include <lua.h>
 #include <lauxlib.h>
+#include <assert.h>
 #include "defs.h"
 #include "shelve.h"
 #include "anydb.h"
@@ -73,7 +73,7 @@ luaopen_shelve(lua_State *L)
 {
     unsigned i;
 
-    ASSERT(L);
+    assert(L);
 
     /* This is more polite to loadmodule and luacheia */
     if (lua_gettop(L) == 0) {
@@ -122,7 +122,7 @@ l_shelve_open(lua_State *L)
     anydb_t dbh;
     int n;
 
-    ASSERT(L);
+    assert(L);
 
     n = lua_gettop(L);
     /* Check arguments. */
@@ -172,8 +172,8 @@ l_shelve_index(lua_State *L)
     const char *datap;
     size_t slen_aux;
 
-    ASSERT(L);
-    ASSERT(lua_isuserdata(L, -2));
+    assert(L);
+    assert(lua_isuserdata(L, -2));
 
     dbh     = (anydb_t*) lua_touserdata(L, -2);
     k.dptr  = (char*) lua_tolstring(L, -1, &slen_aux);
@@ -204,9 +204,9 @@ l_shelve_nindex(lua_State *L)
     shelve_file *udata;
     size_t slen_aux;
 
-    ASSERT(L);
-    ASSERT(lua_gettop(L) == 3);
-    ASSERT(lua_isuserdata(L, -3));
+    assert(L);
+    assert(lua_gettop(L) == 3);
+    assert(lua_isuserdata(L, -3));
 
     udata   = (shelve_file*) lua_touserdata(L, -3);
     k.dptr  = (char*) lua_tolstring(L, -2, &slen_aux);
@@ -244,9 +244,9 @@ l_shelve_trv(lua_State *L)
     anydb_t *dbh;
     datum k, tk;
 
-    ASSERT(L);
-    ASSERT(lua_gettop(L) == 1);
-    ASSERT(lua_isuserdata(L, -1));
+    assert(L);
+    assert(lua_gettop(L) == 1);
+    assert(lua_isuserdata(L, -1));
 
     dbh = (anydb_t*) lua_touserdata(L, -1);
     lua_pop(L, 1);
@@ -281,9 +281,9 @@ l_shelve_gc(lua_State *L)
 {
     shelve_file *udata;
 
-    ASSERT(L);
-    ASSERT(lua_gettop(L) == 1);
-    ASSERT(lua_isuserdata(L, -1));
+    assert(L);
+    assert(lua_gettop(L) == 1);
+    assert(lua_isuserdata(L, -1));
 
     udata = (shelve_file*) lua_touserdata(L, -1);
     if (!udata->rdonly) anydb_reorganize(udata->dbf);
@@ -299,9 +299,9 @@ l_shelve_tostring(lua_State *L)
 {
     shelve_file *udata;
 
-    ASSERT(L);
-    ASSERT(lua_gettop(L) == 1);
-    ASSERT(lua_isuserdata(L, -1));
+    assert(L);
+    assert(lua_gettop(L) == 1);
+    assert(lua_isuserdata(L, -1));
 
     udata = (shelve_file*) lua_touserdata(L, -1);
     lua_pushfstring(L, "shelf (%s, %s)", udata->fname,

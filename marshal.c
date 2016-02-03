@@ -21,6 +21,7 @@
 #include <string.h>
 #include <lua.h>
 #include <lauxlib.h>
+#include <assert.h>
 #include "defs.h"
 #include "shelve.h"
 
@@ -45,8 +46,8 @@ shelve_unmarshal(lua_State *L, const char **datap)
     size_t ssz;
     const char *data = *datap;
 
-    ASSERT(L);
-    ASSERT(data);
+    assert(L);
+    assert(data);
 
     switch (*(data++)) {
         case MARSH_FALSE: /* 'false' boolean value */
@@ -84,8 +85,8 @@ unmarshal_table(lua_State *L, const char **datap)
 {
     const char *data = *datap;
 
-    ASSERT(L);
-    ASSERT(data);
+    assert(L);
+    assert(data);
 
     lua_newtable(L);
     /*
@@ -137,10 +138,10 @@ shelve_marshal(lua_State *L, char **data, int *bytes)
     size_t slen_aux;
     char ch;
 
-    ASSERT(L);
-    ASSERT(data);
-    ASSERT(bytes);
-    ASSERT(lua_gettop(L) > 0);
+    assert(L);
+    assert(data);
+    assert(bytes);
+    assert(lua_gettop(L) > 0);
 
     switch (lua_type(L, -1)) {
         case LUA_TNUMBER: /* Encode a number. */
@@ -190,16 +191,16 @@ marshal_table(lua_State *L, char **data, int *bytes)
 {
     char ch = MARSH_TABLE;
 
-    ASSERT(L);
-    ASSERT(data);
-    ASSERT(bytes);
-    ASSERT(lua_type(L, -1) == LUA_TTABLE);
+    assert(L);
+    assert(data);
+    assert(bytes);
+    assert(lua_type(L, -1) == LUA_TTABLE);
 
     STOR(*data, *bytes, &ch, 1);
 
     lua_pushnil(L);
     while (lua_next(L, -2)) {
-        ASSERT(lua_type(L, -3) == LUA_TTABLE);
+        assert(lua_type(L, -3) == LUA_TTABLE);
         /*
          * - "key" is at index -2 and "value" at index -1
          * - "key" must be encoded first, so move it to the top
@@ -209,7 +210,7 @@ marshal_table(lua_State *L, char **data, int *bytes)
          */
         lua_insert(L, -2);
         if (!shelve_marshal(L, data, bytes)) return 0; /* encode "key" */
-        ASSERT(lua_type(L, -3) == LUA_TTABLE);
+        assert(lua_type(L, -3) == LUA_TTABLE);
         /*
          * Again, lua_insert() moves "key" down to -2 and shifted "value" up to -1.
          * stack: val key tbl
@@ -217,17 +218,17 @@ marshal_table(lua_State *L, char **data, int *bytes)
          */
         lua_insert(L, -2);
         if (!shelve_marshal(L, data, bytes)) return 0; /* encode "value" */
-        ASSERT(lua_type(L, -3) == LUA_TTABLE);
+        assert(lua_type(L, -3) == LUA_TTABLE);
         /*
          * Pop "value", "key" remains in order to call lua_next() properly.
          * stack: key tbl
          * index:  -1  -2
          */
         lua_pop(L, 1);
-        ASSERT(lua_type(L, -2) == LUA_TTABLE);
+        assert(lua_type(L, -2) == LUA_TTABLE);
     }
 
-    ASSERT(lua_type(L, -1) == LUA_TTABLE);
+    assert(lua_type(L, -1) == LUA_TTABLE);
 
     /* Insert MARSH_EOS */
     ch = MARSH_EOT;
@@ -243,7 +244,7 @@ l_shelve_marshal(lua_State *L)
     char *data = NULL;
     int sz  = 0;
 
-    ASSERT(L);
+    assert(L);
 
     if (shelve_marshal(L, &data, &sz)) {
         lua_pop(L, 1);
@@ -263,7 +264,7 @@ l_shelve_unmarshal(lua_State *L)
 {
     const char *dta;
 
-    ASSERT(L);
+    assert(L);
 
     if (lua_gettop(L) != 1) {
         lua_pushstring(L, "one argument expected");

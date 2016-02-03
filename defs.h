@@ -20,52 +20,6 @@
 #ifndef __defs__h
 #define __defs__h
 
-
-/* Possible actions to perform on failed assertion. */
-#define ASSERT_ABORT abort()
-#define ASSERT_EXIT  exit(-1)
-
-/*
- * Action to perform on assertion fail. May be
- * ASSERT_EXIT or ASSERT_ABORT.
- */
-#ifndef ASSERT_FAIL_ACTION
-# define ASSERT_FAIL_ACTION ASSERT_ABORT
-#endif /* !ASSERT_FAIL_ACTION */
-
-/*
- * The ASSERT macro.
- * The GCC '__PRETTY_FUNCTION__' pseudo-macro is used to
- * include function names in output of assertions, when
- * compiling with it.
- */
-#if defined(_DEBUG) || defined(DEBUG)
-# ifdef __GNUC__
-#  include <stdio.h>
-    extern void abort(void);
-    /* Extended macro, used with GCC */
-#  define ASSERT(__expr) \
-    ((__expr) ? (void)0 \
-              : (fprintf(stderr, "%s: function %s: line %u:\n" \
-                                 "   assertion '%s' failed\n", \
-                                __FILE__, __PRETTY_FUNCTION__, __LINE__, \
-                                #__expr), fflush(stderr), \
-                ASSERT_FAIL_ACTION))
-# else  /* __GNUC__ */
-   /* Standard macro, used with other compilers */
-#  define DEBUG
-#  include <assert.h>
-#  define ASSERT assert
-# endif /* __GNUC__ */
-   /*
-    * Define to empty when not compiling with debugging
-    * enabled.
-    */
-#else  /* (_DEBUG || DEBUG) */
-# define ASSERT(__ignore) ((void)0)
-#endif /* (_DEBUG || DEBUG) */
-
-
 /*
  * Header declarations start/end macros. These protect definitions
  * to be mangled by C++ compilers, so linking with plain C functions

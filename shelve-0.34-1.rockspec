@@ -40,6 +40,9 @@ build = {
          libraries = {
             "gdbm";
          };
+         defines = {
+            "NDEBUG";
+         };
       };
    };
 }
