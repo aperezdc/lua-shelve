@@ -1,6 +1,13 @@
 
-local function printf(fmt, ...)
-	io.stdout:write(string.format(fmt, unpack(arg)))
+local printf
+if unpack ~= nil then
+   printf = function(fmt, ...)
+      io.stdout:write(string.format(fmt, unpack(arg)))
+   end
+else
+   printf = function(fmt, ...)
+      io.stdout:write(string.format(fmt, ...))
+   end
 end
 
 package.cpath = "./?.so"
