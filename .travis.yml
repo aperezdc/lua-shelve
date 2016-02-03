@@ -7,6 +7,8 @@ env:
     - LUA=lua V=5.1
     - LUA=lua V=5.2
     - LUA=lua V=5.3
+    - LUA=luajit V=2.0
+    - LUA=luajit V=2.1
 
 before_install:
   - pip install hererocks
