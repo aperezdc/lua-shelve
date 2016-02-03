@@ -1,5 +1,8 @@
 # Lua Shelve Module
 
+[![Build
+Status](https://img.shields.io/travis/aperezdc/lua-shelve.svg?style=flat)](https://travis-ci.org/aperezdc/lua-shelve)
+
 This is a Lua module that uses either GNU Gdbm or the more standard Ndbm
 database libraries to store  data in files, but this data is saved in
 a special way: all standard Lua datatypes may be directly stored and
