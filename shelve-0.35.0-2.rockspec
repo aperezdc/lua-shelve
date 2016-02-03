@@ -1,5 +1,5 @@
 package = "shelve"
-version = "0.35.0-1"
+version = "0.35.0-2"
 source = {
    url = "git://github.com/aperezdc/lua-shelve",
    tag = "v0.35.0"
@@ -15,7 +15,7 @@ description = {
    license = "LGPLv2"
 }
 dependencies = {
-   "lua ~= 5.1"
+   "lua >= 5.1"
 }
 external_dependencies = {
    LIBGDBM = {
