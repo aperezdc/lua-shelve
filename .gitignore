@@ -1,0 +1,5 @@
+.stamp
+test.db
+*.rock
+*.o
+*.so
