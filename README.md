@@ -106,8 +106,8 @@ Example:
 
 ```
 file = shelve.open("test")
-file.number = 12345   -- this assignment defines "number"
-file.number = nil			-- this assignment deletes "number"
+file.number = 12345  -- this assignment defines "number"
+file.number = nil    -- this assignment deletes "number"
 ```
 
 Indexing a shelve file with an undefined key will always return `nil`.
@@ -116,10 +116,10 @@ Example:
 ```
 file = shelve.open("test")
 file.number = 12345   -- this assignment defines "number"
-print(file.number)		-- prints "12345"
-file.number = nil			-- this assignment deletes "number"
-print(file.number)		-- prints "nil"
-print(file.undefined)	-- prints "nil", again
+print(file.number)    -- prints "12345"
+file.number = nil     -- this assignment deletes "number"
+print(file.number)    -- prints "nil"
+print(file.undefined) -- prints "nil", again
 ```
 
 In order to close a shelf, just assign let it be garbage-collected When Gdbm
