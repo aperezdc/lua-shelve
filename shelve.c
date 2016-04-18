@@ -57,7 +57,6 @@ typedef struct shelve_file_t {
 /* Metatable items */
 
 
-#define SHELVE_META_ITEMS 5
 static luaL_Reg meta[] =
 {
     { "__index",    l_shelve_index    },
@@ -65,49 +64,31 @@ static luaL_Reg meta[] =
     { "__call",     l_shelve_trv      },
     { "__gc",       l_shelve_gc       },
     { "__tostring", l_shelve_tostring },
+    { NULL,         NULL              },
+};
+
+static luaL_Reg lib[] =
+{
+    { "open",      l_shelve_open      },
+    { "marshal",   l_shelve_marshal   },
+    { "unmarshal", l_shelve_unmarshal },
+    { NULL,        NULL               },
 };
 
 
 LUALIB_API int
 luaopen_shelve(lua_State *L)
 {
-    unsigned i;
-
     assert(L);
 
-    /* This is more polite to loadmodule and luacheia */
-    if (lua_gettop(L) == 0) {
-        lua_pushstring(L, "shelve");
-    } else {
-        luaL_checktype(L, -1, LUA_TSTRING);
-    }
-
-    /* Create the namespace table. */
-    lua_newtable(L);
-
-    /* Create the metatable. */
-    lua_pushstring(L, SHELVE_REGISTRY_KEY);
-    lua_newtable(L);
-    for (i=0 ; i<SHELVE_META_ITEMS ; i++) {
-        lua_pushstring(L, meta[i].name);
-        lua_pushcfunction(L, meta[i].func);
-        lua_rawset(L, -3);
-    }
-    lua_settable(L, LUA_REGISTRYINDEX);
-
-    /* Set the "open" function. */
-    lua_pushstring(L, "open");
-    lua_pushcfunction(L, l_shelve_open);
-    lua_rawset(L, -3);
-
-    /* Set the marshal/unmarshal functions. */
-    lua_pushstring(L, "marshal");
-    lua_pushcfunction(L, l_shelve_marshal);
-    lua_rawset(L, -3);
-    lua_pushstring(L, "unmarshal");
-    lua_pushcfunction(L, l_shelve_unmarshal);
-    lua_rawset(L, -3);
-
+    luaL_newmetatable(L, SHELVE_REGISTRY_KEY);
+#if LUA_VERSION_NUM < 502
+    luaL_register(L, NULL, meta);
+    luaL_register(L, "shelve", lib);
+#else
+    luaL_setfuncs(L, meta, 0);
+    luaL_newlib(L, lib);
+#endif
     return 1;
 }
 
@@ -155,10 +136,14 @@ l_shelve_open(lua_State *L)
     udata->rdonly = (flags == ANYDB_READ);
 
     /* Associate metatable with userdata. */
+#if LUA_VERSION_NUM < 502
     lua_pushstring(L, SHELVE_REGISTRY_KEY);
     lua_gettable(L, LUA_REGISTRYINDEX);
     lua_setmetatable(L, -2);
     lua_remove(L, -2);
+#else
+    luaL_setmetatable(L, SHELVE_REGISTRY_KEY);
+#endif
 
     return 1;
 }
