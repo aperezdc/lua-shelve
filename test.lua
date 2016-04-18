@@ -13,8 +13,12 @@ end
 package.cpath = "./?.so"
 local shelve = assert(require("shelve"))
 print("Opening 'db'")
-
+os.remove("test.db")
 local db = assert(shelve.open("test.db"))
+
+local num_keys = 0
+for key in db() do num_keys = num_keys + 1 end
+assert(num_keys == 0)
 
 a = "one"
 b = "two"
@@ -25,6 +29,9 @@ db.str = "a string" -- a string
 db.t1  = {}         -- an empty table
 db.t2  = { s="S" }  -- table with one element
 db.t3  = { a,b,c }  -- indexed table, multiple elements
+
+for key in db() do num_keys = num_keys + 1 end
+assert(num_keys == 5)
 
 db.nested =         -- nested tables
    {

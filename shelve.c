@@ -238,40 +238,35 @@ l_shelve_nindex(lua_State *L)
 }
 
 
+struct dbiter {
+    anydb_t *dbh;
+    datum k;
+};
+
+static int
+l_shelve_trv_next(lua_State *L)
+{
+    datum k;
+    struct dbiter *i = (struct dbiter*) lua_touserdata(L, lua_upvalueindex(1));
+    if (i->k.dptr) {
+        lua_pushlstring(L, i->k.dptr, (size_t) i->k.dsize);
+        k = i->k;
+        i->k = anydb_nextkey(*i->dbh, k);
+        xfree(k.dptr);
+        return 1;
+    }
+    return 0;
+}
+
+
 int
 l_shelve_trv(lua_State *L)
 {
-    anydb_t *dbh;
-    datum k, tk;
-
-    assert(L);
-    assert(lua_gettop(L) == 1);
-    assert(lua_isuserdata(L, -1));
-
-    dbh = (anydb_t*) lua_touserdata(L, -1);
-    lua_pop(L, 1);
-
-    /*
-     * A table containing all the keys is returned, all the keys
-     * are assigned to 'true' boolean values. This is useful to
-     * write Lua code similar to the following:
-     *
-     *    db = shelve.open("test.db")
-     *    for key in db() do
-     *        print("key: " .. key, "data: " .. db[key])
-     *    end
-     *
-     */
-    lua_newtable(L);
-    for (k=anydb_firstkey(*dbh) ;
-         k.dptr ;
-         tk=k, k=anydb_nextkey(*dbh, k), xfree(tk.dptr))
-    {
-        lua_pushlstring(L, k.dptr, (size_t) k.dsize);
-        lua_pushboolean(L, 1);
-        lua_rawset(L, -3);
-    }
-
+    anydb_t *dbh = (anydb_t*) luaL_checkudata(L, -1, SHELVE_REGISTRY_KEY);
+    struct dbiter *i = lua_newuserdata(L, sizeof(struct dbiter));
+    i->k = anydb_firstkey(*dbh);
+    i->dbh = dbh;
+    lua_pushcclosure(L, l_shelve_trv_next, 1);
     return 1;
 }
 
