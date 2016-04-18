@@ -33,7 +33,7 @@ file.title = "File containing a string and a table"
 
 -- Show contents of the file in (key, value) form
 for key in file() do
-  print("(" .. key .. ", " .. db[key] .. ")")
+  print("(" .. key .. ", " .. tostring(file[key]) .. ")")
 end
 ```
 
