@@ -50,13 +50,12 @@ luaL_setmetatable(lua_State *L, const char *name)
 
 
 /* Function protos */
-int l_shelve_index(lua_State*);
-int l_shelve_nindex(lua_State*);
-int l_shelve_trv(lua_State*);
-int l_shelve_gc(lua_State*);
-int l_shelve_open(lua_State*);
-int l_shelve_tostring(lua_State*);
-
+static int l_shelve_index(lua_State*);
+static int l_shelve_nindex(lua_State*);
+static int l_shelve_trv(lua_State*);
+static int l_shelve_gc(lua_State*);
+static int l_shelve_open(lua_State*);
+static int l_shelve_tostring(lua_State*);
 
 /* Lua userdata type */
 typedef struct shelve_file_t {
