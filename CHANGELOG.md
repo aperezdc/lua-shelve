@@ -5,6 +5,11 @@ project adheres to [Semantic Versioning](http://semver.org).
 
 ## [Unreleased]
 
+## [v0.35.1] - 2016-04-18
+### Changed
+- The `__call` metamethod for a shelve userdata now returns an iterator
+  function instead of a table with the keys.
+
 ## [v0.35.0] - 2016-02-03
 ### Changed
 - Adopted Semantic Versioning.
@@ -23,6 +28,7 @@ project adheres to [Semantic Versioning](http://semver.org).
 - Removed unneeded `xfree(udata)` in the `__gc` metamethod of the shelve type.
   This caused occassional segmentation faults.
 
-[Unreleased]: https://github.com/aperezdc/lua-shelve/compare/v0.34...HEAD
+[Unreleased]: https://github.com/aperezdc/lua-shelve/compare/v0.35.1...HEAD
+[v0.35.0]: https://github.com/aperezdc/lua-shelve/compare/v0.35.0...v0.35.1
 [v0.35.0]: https://github.com/aperezdc/lua-shelve/compare/v0.34...v0.35.0
 [v0.34]: https://github.com/aperezdc/lua-shelve/compare/v0.33...v0.34
