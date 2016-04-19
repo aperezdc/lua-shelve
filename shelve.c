@@ -37,6 +37,17 @@
 # define LUALIB_API API
 #endif
 
+#if LUA_VERSION_NUM < 502
+static void
+luaL_setmetatable(lua_State *L, const char *name)
+{
+    lua_pushstring(L, name);
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    lua_setmetatable(L, -2);
+    lua_remove(L, -2);
+}
+#endif
+
 
 /* Function protos */
 int l_shelve_index(lua_State*);
@@ -136,14 +147,7 @@ l_shelve_open(lua_State *L)
     udata->rdonly = (flags == ANYDB_READ);
 
     /* Associate metatable with userdata. */
-#if LUA_VERSION_NUM < 502
-    lua_pushstring(L, SHELVE_REGISTRY_KEY);
-    lua_gettable(L, LUA_REGISTRYINDEX);
-    lua_setmetatable(L, -2);
-    lua_remove(L, -2);
-#else
     luaL_setmetatable(L, SHELVE_REGISTRY_KEY);
-#endif
 
     return 1;
 }
