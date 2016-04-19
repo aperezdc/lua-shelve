@@ -56,6 +56,7 @@ static int l_shelve_trv(lua_State*);
 static int l_shelve_gc(lua_State*);
 static int l_shelve_open(lua_State*);
 static int l_shelve_tostring(lua_State*);
+static int l_shelve_iter_gc(lua_State*);
 
 /* Lua userdata type */
 typedef struct shelve_file_t {
@@ -77,6 +78,12 @@ static luaL_Reg meta[] =
     { NULL,         NULL              },
 };
 
+static luaL_Reg iter_meta[] =
+{
+    { "__gc", l_shelve_iter_gc },
+    { NULL,   NULL             },
+};
+
 static luaL_Reg lib[] =
 {
     { "open",      l_shelve_open      },
@@ -91,14 +98,29 @@ luaopen_shelve(lua_State *L)
 {
     assert(L);
 
+    /* Shelve file metatable */
     luaL_newmetatable(L, SHELVE_REGISTRY_KEY);
 #if LUA_VERSION_NUM < 502
     luaL_register(L, NULL, meta);
-    luaL_register(L, "shelve", lib);
 #else
     luaL_setfuncs(L, meta, 0);
+#endif
+
+    /* Shelve file iterator metatable */
+    luaL_newmetatable(L, SHELVE_ITER_META);
+#if LUA_VERSION_NUM < 502
+    luaL_register(L, NULL, iter_meta);
+#else
+    luaL_setfuncs(L, iter_meta, 0);
+#endif
+
+    /* Module */
+#if LUA_VERSION_NUM < 502
+    luaL_register(L, "shelve", lib);
+#else
     luaL_newlib(L, lib);
 #endif
+
     return 1;
 }
 
@@ -246,12 +268,19 @@ l_shelve_trv_next(lua_State *L)
     return 0;
 }
 
+static int
+l_shelve_iter_gc(lua_State *L)
+{
+    struct dbiter *i = (struct dbiter*) lua_touserdata(L, -1);
+    xfree(i->k.dptr);
+}
 
 int
 l_shelve_trv(lua_State *L)
 {
     anydb_t *dbh = (anydb_t*) luaL_checkudata(L, -1, SHELVE_REGISTRY_KEY);
     struct dbiter *i = lua_newuserdata(L, sizeof(struct dbiter));
+    luaL_setmetatable(L, SHELVE_ITER_META);
     i->k = anydb_firstkey(*dbh);
     i->dbh = dbh;
     lua_pushcclosure(L, l_shelve_trv_next, 1);

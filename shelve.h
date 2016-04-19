@@ -29,6 +29,7 @@
  * Lua registry.
  */
 #define SHELVE_REGISTRY_KEY "shelve-file-meta"
+#define SHELVE_ITER_META    "shelve-file-iter-meta"
 
 /*
  * Lua to byte-array marshaling functions. Representation of
