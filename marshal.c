@@ -18,18 +18,18 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include <stdlib.h>
 #include <string.h>
 #include <lua.h>
 #include <lauxlib.h>
 #include <assert.h>
-#include "defs.h"
 #include "shelve.h"
 
 
 #define GROW(_dp, _szvar, _sz) \
     _szvar += (_sz); \
-    _dp = ((_dp) ? xrealloc(_dp, _szvar * sizeof(char)) \
-                 : xmalloc(_szvar * sizeof(char)))
+    _dp = ((_dp) ? realloc(_dp, _szvar * sizeof(char)) \
+                 : malloc(_szvar * sizeof(char)))
 
 #define STOR(_dp, _szvar, _what, _sz) \
     { GROW(_dp, _szvar, _sz); \

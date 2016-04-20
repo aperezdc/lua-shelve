@@ -21,7 +21,6 @@
 #ifndef __lua_module_shelve__h
 #define __lua_module_shelve__h
 
-#include "defs.h"
 #include <lua.h>
 
 #if (defined(__GNUC__) && __GNUC__ >= 4) || __clang__

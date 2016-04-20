@@ -29,7 +29,6 @@
 #include <lua.h>
 #include <lauxlib.h>
 #include <assert.h>
-#include "defs.h"
 #include "shelve.h"
 #include "anydb.h"
 
