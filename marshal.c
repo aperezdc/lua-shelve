@@ -104,24 +104,24 @@ unmarshal_table(lua_State *L, const char **datap)
                  * stack: data key tbl
                  * index:   -1  -2  -3
                  */
-            lua_rawset(L, -3);
-            break;
+                lua_rawset(L, -3);
+                break;
             case MARSH_EOT: /* end of table */
-            data++;
-            /*
-             * I know using 'goto' is not structured programming, but
-             * I use it to avoid cheching "*data" two times. Without
-             * 'goto' the code would look like the following:
-             *
-             *   while (*data != MARSH_EOS) {
-             *       switch (*data) {
-             *           ... some code ...
-             *       }
-             *   }
-             */
-            goto loop_end;
+                data++;
+                /*
+                 * I know using 'goto' is not structured programming, but
+                 * I use it to avoid checking "*data" twice. Without
+                 * 'goto' the code would look like the following:
+                 *
+                 *   while (*data != MARSH_EOS) {
+                 *       switch (*data) {
+                 *           ... some code ...
+                 *       }
+                 *   }
+                 */
+                goto loop_end;
             default: /* not number, not string: invalid key */
-            return 0;
+                return 0;
         }
     }
 loop_end:
