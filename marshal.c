@@ -247,12 +247,10 @@ l_shelve_marshal(lua_State *L)
     assert(L);
 
     if (shelve_marshal(L, &data, &sz)) {
-        lua_pop(L, 1);
         lua_pushlstring(L, data, (size_t) sz);
         return 1;
     }
 
-    lua_pop(L, 1);
     lua_pushnil(L);
     lua_pushstring(L, "Cannot encode data");
     return 2;
