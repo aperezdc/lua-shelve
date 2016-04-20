@@ -259,16 +259,11 @@ l_shelve_trv(lua_State *L)
 int
 l_shelve_gc(lua_State *L)
 {
-    shelve_file *udata;
-
-    assert(L);
-    assert(lua_gettop(L) == 1);
-    assert(lua_isuserdata(L, -1));
-
-    udata = (shelve_file*) lua_touserdata(L, -1);
-    if (!udata->rdonly) anydb_reorganize(udata->dbf);
-    anydb_close(udata->dbf);
-    lua_pop(L, 1);
+    shelve_file *shelf = luaL_checkudata(L, 1, SHELVE_REGISTRY_KEY);
+    if (!shelf->rdonly) {
+        anydb_reorganize(shelf->dbf);
+    }
+    anydb_close(shelf->dbf);
     return 0;
 }
 
