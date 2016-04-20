@@ -162,12 +162,12 @@ l_shelve_index(lua_State *L)
 {
     datum d, k;
     size_t slen_aux;
+    shelve_file *shelf = luaL_checkudata(L, 1, SHELVE_REGISTRY_KEY);
 
-    anydb_t *dbh = luaL_checkudata(L, 1, SHELVE_REGISTRY_KEY);
     k.dptr  = (char*) lua_tolstring(L, 2, &slen_aux);
     k.dsize = (int) slen_aux;
+    d = anydb_fetch(shelf->dbf, k);
 
-    d = anydb_fetch(*dbh, k);
     if (d.dptr) {
         const char *datap = d.dptr;
         if (!shelve_unmarshal(L, &datap)) {
