@@ -36,8 +36,8 @@
       memcpy(&(_dp)[(_szvar) - (_sz)], _what, _sz); }
 
 
-int marshal_table(lua_State*, char**, int*);
-int unmarshal_table(lua_State*, const char**);
+static int marshal_table(lua_State*, char**, int*);
+static int unmarshal_table(lua_State*, const char**);
 
 
 int
@@ -131,7 +131,7 @@ loop_end:
 }
 
 
-    int
+int
 shelve_marshal(lua_State *L, char **data, int *bytes)
 {
     size_t slen;

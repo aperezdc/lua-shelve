@@ -21,32 +21,6 @@
 #define __defs__h
 
 /*
- * Chain of fools to detect wether we are using Win32.
- */
-#if defined(__WINDOWS__) || defined(_WINDOWS) || defined(_Windows) || \
-    defined(__WIN32__)   || defined(_WIN32)   || defined(WIN32)    || \
-    defined(__NT__) || defined(__NT_DLL__) || defined(__WINDOWS_386__)
-# define PLAT_WIN32
-#else
-# define PLAT_POSIX
-#endif
-
-
-/*
- * The API macro is used to mark functions that must be exported to
- * the world. Under Win32 it's expanded to export symbols in DLLs
- * when appropiate.
- */
-#if defined(PLAT_WIN32) && defined(BUILD_DLL)
-# define API extern __declspec(dllexport)
-#elif defined(PLAT_WIN32) && defined(USE_DLL)
-# define API extern __declspec(dllimport)
-#else
-# define API extern
-#endif
-
-
-/*
  * Exits the program printing a string to stdout.
  */
 extern void exit();

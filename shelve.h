@@ -24,6 +24,12 @@
 #include "defs.h"
 #include <lua.h>
 
+#if (defined(__GNUC__) && __GNUC__ >= 4) || __clang__
+# define LOCAL_SYMBOL __attribute__((visibility("hidden")))
+#else
+# define LOCAL_SYMBOL
+#endif
+
 /*
  * Key used to store the metatable for "shelve" files in the
  * Lua registry.
@@ -56,10 +62,9 @@
 #define MARSH_EOT     'T'
 #define MARSH_EOS     '!'
 
-int shelve_marshal(lua_State*, char**, int*);
-int shelve_unmarshal(lua_State*, const char**);
-API int l_shelve_marshal(lua_State*);
-API int l_shelve_unmarshal(lua_State*);
-API int l_shelve_init(lua_State*);
+LOCAL_SYMBOL int shelve_marshal(lua_State*, char**, int*);
+LOCAL_SYMBOL int shelve_unmarshal(lua_State*, const char**);
+LOCAL_SYMBOL int l_shelve_marshal(lua_State*);
+LOCAL_SYMBOL int l_shelve_unmarshal(lua_State*);
 
 #endif /* !__lua_module_shelve__h */
