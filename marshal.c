@@ -260,29 +260,10 @@ l_shelve_marshal(lua_State *L)
 int
 l_shelve_unmarshal(lua_State *L)
 {
-    const char *dta;
-
-    assert(L);
-
-    if (lua_gettop(L) != 1) {
-        lua_pushstring(L, "one argument expected");
-        lua_error(L);
-        return 0;
+    const char *data = luaL_checkstring(L, 1);
+    if (shelve_unmarshal(L, &data)) {
+        return 1;
     }
 
-    if (!lua_isstring(L, -1)) {
-        lua_pushstring(L, "argument must be of type string");
-        lua_error(L);
-        return 0;
-    }
-
-    dta = lua_tostring(L, -1);
-    lua_pop(L, 1);
-
-    if (!shelve_unmarshal(L, &dta)) {
-        luaL_error(L, "bad format in encoded data");
-    }
-
-    return 1;
+    return luaL_error(L, "bad format in encoded data");
 }
-
