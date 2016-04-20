@@ -21,20 +21,6 @@
 #define __defs__h
 
 /*
- * Header declarations start/end macros. These protect definitions
- * to be mangled by C++ compilers, so linking with plain C functions
- * and variables is done correctly.
- */
-#if defined(__cplusplus) || defined(c_plusplus)
-# define BEGIN_DECLS  extern "C" {
-# define END_DECLS    }
-#else
-# define BEGIN_DECLS
-# define END_DECLS
-#endif
-
-
-/*
  * Chain of fools to detect wether we are using Win32.
  */
 #if defined(__WINDOWS__) || defined(_WINDOWS) || defined(_Windows) || \
