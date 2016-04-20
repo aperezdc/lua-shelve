@@ -30,13 +30,6 @@
 #endif
 
 /*
- * Key used to store the metatable for "shelve" files in the
- * Lua registry.
- */
-#define SHELVE_REGISTRY_KEY "shelve-file-meta"
-#define SHELVE_ITER_META    "shelve-file-iter-meta"
-
-/*
  * Lua to byte-array marshaling functions. Representation of
  * numbers is machine-dependant.
  *
@@ -63,7 +56,7 @@
 
 LOCAL_SYMBOL int shelve_marshal(lua_State*, char**, int*);
 LOCAL_SYMBOL int shelve_unmarshal(lua_State*, const char**);
-LOCAL_SYMBOL int l_shelve_marshal(lua_State*);
-LOCAL_SYMBOL int l_shelve_unmarshal(lua_State*);
+LOCAL_SYMBOL int shelve_module_marshal(lua_State*);
+LOCAL_SYMBOL int shelve_module_unmarshal(lua_State*);
 
 #endif /* !__lua_module_shelve__h */

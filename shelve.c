@@ -27,6 +27,11 @@
 #include "shelve.h"
 #include "anydb.h"
 
+
+static const char SHELVE_META[]      = "shelve-file-meta";
+static const char SHELVE_ITER_META[] = "shelve-file-iter-meta";
+
+
 #ifndef LUALIB_API
 # define LUALIB_API API
 #endif
@@ -44,45 +49,46 @@ luaL_setmetatable(lua_State *L, const char *name)
 
 
 /* Function protos */
-static int l_shelve_index(lua_State*);
-static int l_shelve_nindex(lua_State*);
-static int l_shelve_trv(lua_State*);
-static int l_shelve_gc(lua_State*);
-static int l_shelve_open(lua_State*);
-static int l_shelve_tostring(lua_State*);
-static int l_shelve_iter_gc(lua_State*);
-
-/* Lua userdata type */
-typedef struct shelve_file_t {
-    anydb_t dbf;
-    int rdonly;
-} shelve_file;
-
-/* Metatable items */
+static int shelve_index(lua_State*);
+static int shelve_newindex(lua_State*);
+static int shelve_call(lua_State*);
+static int shelve_gc(lua_State*);
+static int iterator_gc(lua_State*);
+static int shelve_tostring(lua_State*);
+static int shelve_module_open(lua_State*);
 
 
-static luaL_Reg meta[] =
-{
-    { "__index",    l_shelve_index    },
-    { "__newindex", l_shelve_nindex   },
-    { "__call",     l_shelve_trv      },
-    { "__gc",       l_shelve_gc       },
-    { "__tostring", l_shelve_tostring },
-    { NULL,         NULL              },
+struct Shelve {
+    anydb_t db;
+    int     ro;
 };
 
-static luaL_Reg iter_meta[] =
-{
-    { "__gc", l_shelve_iter_gc },
-    { NULL,   NULL             },
+static luaL_Reg shelve_meta[] = {
+    { "__index",    shelve_index    },
+    { "__newindex", shelve_newindex },
+    { "__call",     shelve_call     },
+    { "__gc",       shelve_gc       },
+    { "__tostring", shelve_tostring },
+    { NULL,         NULL            },
 };
 
-static luaL_Reg lib[] =
-{
-    { "open",      l_shelve_open      },
-    { "marshal",   l_shelve_marshal   },
-    { "unmarshal", l_shelve_unmarshal },
-    { NULL,        NULL               },
+
+struct Iterator {
+    anydb_t db;
+    datum k;
+};
+
+static luaL_Reg iterator_meta[] = {
+    { "__gc", iterator_gc },
+    { NULL,   NULL        },
+};
+
+
+static luaL_Reg shelve_module[] = {
+    { "open",      shelve_module_open      },
+    { "marshal",   shelve_module_marshal   },
+    { "unmarshal", shelve_module_unmarshal },
+    { NULL,        NULL                    },
 };
 
 
@@ -92,39 +98,39 @@ luaopen_shelve(lua_State *L)
     assert(L);
 
     /* Shelve file metatable */
-    luaL_newmetatable(L, SHELVE_REGISTRY_KEY);
+    luaL_newmetatable(L, SHELVE_META);
 #if LUA_VERSION_NUM < 502
-    luaL_register(L, NULL, meta);
+    luaL_register(L, NULL, shelve_meta);
 #else
-    luaL_setfuncs(L, meta, 0);
+    luaL_setfuncs(L, shelve_meta, 0);
 #endif
 
     /* Shelve file iterator metatable */
     luaL_newmetatable(L, SHELVE_ITER_META);
 #if LUA_VERSION_NUM < 502
-    luaL_register(L, NULL, iter_meta);
+    luaL_register(L, NULL, iterator_meta);
 #else
-    luaL_setfuncs(L, iter_meta, 0);
+    luaL_setfuncs(L, iterator_meta, 0);
 #endif
 
     /* Module */
 #if LUA_VERSION_NUM < 502
-    luaL_register(L, "shelve", lib);
+    luaL_register(L, "shelve", shelve_module);
 #else
-    luaL_newlib(L, lib);
+    luaL_newlib(L, shelve_module);
 #endif
 
     return 1;
 }
 
 
-int
-l_shelve_open(lua_State *L)
+static int
+shelve_module_open(lua_State *L)
 {
     int flags = ANYDB_WRITE;
-    shelve_file *udata = NULL;
+    struct Shelve *self = NULL;
     const char *rwmode = NULL;
-    anydb_t dbh;
+    anydb_t db;
     int n = lua_gettop(L);
 
     /* Check arguments. */
@@ -139,34 +145,33 @@ l_shelve_open(lua_State *L)
     }
 
     /* Open the DB and remove filename from the stack. */
-    if (!(dbh = anydb_open(luaL_checkstring(L, 1), flags))) {
+    if (!(db = anydb_open(luaL_checkstring(L, 1), flags))) {
         lua_pushnil(L);
         lua_pushstring(L, strerror(errno));
         return 2;
     }
 
-    /* Configure returned userdata. */
-    udata = (shelve_file*) lua_newuserdata(L, sizeof(shelve_file));
-    udata->dbf    = dbh;
-    udata->rdonly = (flags == ANYDB_READ);
+    self = lua_newuserdata(L, sizeof(struct Shelve));
+    self->ro = (flags == ANYDB_READ);
+    self->db = db;
 
     /* Associate metatable with userdata. */
-    luaL_setmetatable(L, SHELVE_REGISTRY_KEY);
+    luaL_setmetatable(L, SHELVE_META);
 
     return 1;
 }
 
 
-int
-l_shelve_index(lua_State *L)
+static int
+shelve_index(lua_State *L)
 {
     datum d, k;
     size_t slen_aux;
-    shelve_file *shelf = luaL_checkudata(L, 1, SHELVE_REGISTRY_KEY);
+    struct Shelve *self = luaL_checkudata(L, 1, SHELVE_META);
 
     k.dptr  = (char*) lua_tolstring(L, 2, &slen_aux);
     k.dsize = (int) slen_aux;
-    d = anydb_fetch(shelf->dbf, k);
+    d = anydb_fetch(self->db, k);
 
     if (d.dptr) {
         const char *datap = d.dptr;
@@ -181,23 +186,23 @@ l_shelve_index(lua_State *L)
 }
 
 
-int
-l_shelve_nindex(lua_State *L)
+static int
+shelve_newindex(lua_State *L)
 {
     datum k, d = { NULL, 0 };
     size_t slen_aux;
-    shelve_file *shelf = luaL_checkudata(L, 1, SHELVE_REGISTRY_KEY);
+    struct Shelve *self = luaL_checkudata(L, 1, SHELVE_META);
 
     k.dptr  = (char*) lua_tolstring(L, 2, &slen_aux);
     k.dsize = (int) slen_aux;
 
-    if (shelf->rdonly) {
-        luaL_error(L, "cannot modify read-only shelf datafile");
+    if (self->ro) {
+        return luaL_error(L, "cannot modify read-only shelf datafile");
     }
 
     if (lua_isnil(L, 3)) {
         /* Remove key in database. */
-        anydb_delete(shelf->dbf, k);
+        anydb_delete(self->db, k);
         return 0;
     }
 
@@ -205,7 +210,7 @@ l_shelve_nindex(lua_State *L)
         return luaL_error(L, "cannot encode data");
     }
 
-    if (anydb_store(shelf->dbf, k, d, ANYDB_REPLACE) != 0) {
+    if (anydb_store(self->db, k, d, ANYDB_REPLACE) != 0) {
         free(d.dptr);
         return luaL_error(L, "cannot update item in data file");
     }
@@ -215,20 +220,15 @@ l_shelve_nindex(lua_State *L)
 }
 
 
-struct dbiter {
-    anydb_t *dbh;
-    datum k;
-};
-
 static int
-l_shelve_trv_next(lua_State *L)
+iterator_next(lua_State *L)
 {
-    datum k;
-    struct dbiter *i = (struct dbiter*) lua_touserdata(L, lua_upvalueindex(1));
+    struct Iterator *i = lua_touserdata(L, lua_upvalueindex(1));
     if (i->k.dptr) {
+        datum k;
         lua_pushlstring(L, i->k.dptr, (size_t) i->k.dsize);
         k = i->k;
-        i->k = anydb_nextkey(*i->dbh, k);
+        i->k = anydb_nextkey(i->db, k);
         free(k.dptr);
         return 1;
     }
@@ -236,44 +236,44 @@ l_shelve_trv_next(lua_State *L)
 }
 
 static int
-l_shelve_iter_gc(lua_State *L)
+iterator_gc(lua_State *L)
 {
-    struct dbiter *i = (struct dbiter*) lua_touserdata(L, -1);
+    struct Iterator *i = lua_touserdata(L, -1);
     free(i->k.dptr);
     i->k.dptr = NULL;
 }
 
-int
-l_shelve_trv(lua_State *L)
+static int
+shelve_call(lua_State *L)
 {
-    anydb_t *dbh = (anydb_t*) luaL_checkudata(L, -1, SHELVE_REGISTRY_KEY);
-    struct dbiter *i = lua_newuserdata(L, sizeof(struct dbiter));
+    struct Shelve *self = luaL_checkudata(L, -1, SHELVE_META);
+
+    struct Iterator *i = lua_newuserdata(L, sizeof(struct Iterator));
+    i->k = anydb_firstkey(self->db);
+    i->db = self->db;
     luaL_setmetatable(L, SHELVE_ITER_META);
-    i->k = anydb_firstkey(*dbh);
-    i->dbh = dbh;
-    lua_pushcclosure(L, l_shelve_trv_next, 1);
+
+    lua_pushcclosure(L, iterator_next, 1);
     return 1;
 }
 
 
-int
-l_shelve_gc(lua_State *L)
+static int
+shelve_gc(lua_State *L)
 {
-    shelve_file *shelf = luaL_checkudata(L, 1, SHELVE_REGISTRY_KEY);
-    if (!shelf->rdonly) {
-        anydb_reorganize(shelf->dbf);
+    struct Shelve *self = luaL_checkudata(L, 1, SHELVE_META);
+    if (!self->ro) {
+        anydb_reorganize(self->db);
     }
-    anydb_close(shelf->dbf);
+    anydb_close(self->db);
     return 0;
 }
 
 
-int
-l_shelve_tostring(lua_State *L)
+static int
+shelve_tostring(lua_State *L)
 {
-    shelve_file *udata = luaL_checkudata(L, 1, SHELVE_REGISTRY_KEY);
-    lua_pushfstring(L, "shelf (%p, %s)", udata,
-                    (udata->rdonly) ? "ro" : "rw");
+    struct Shelve *self = luaL_checkudata(L, 1, SHELVE_META);
+    lua_pushfstring(L, "shelve (%p, %s)", self->db, self->ro ? "ro" : "rw");
     return 1;
 }
-

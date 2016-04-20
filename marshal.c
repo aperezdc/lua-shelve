@@ -239,7 +239,7 @@ marshal_table(lua_State *L, char **data, int *bytes)
 
 
 int
-l_shelve_marshal(lua_State *L)
+shelve_module_marshal(lua_State *L)
 {
     char *data = NULL;
     int sz  = 0;
@@ -258,7 +258,7 @@ l_shelve_marshal(lua_State *L)
 
 
 int
-l_shelve_unmarshal(lua_State *L)
+shelve_module_unmarshal(lua_State *L)
 {
     const char *data = luaL_checkstring(L, 1);
     if (shelve_unmarshal(L, &data)) {
