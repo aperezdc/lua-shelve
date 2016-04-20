@@ -161,29 +161,21 @@ int
 l_shelve_index(lua_State *L)
 {
     datum d, k;
-    anydb_t *dbh;
     size_t slen_aux;
 
-    assert(L);
-    assert(lua_isuserdata(L, -2));
-
-    dbh     = (anydb_t*) lua_touserdata(L, -2);
-    k.dptr  = (char*) lua_tolstring(L, -1, &slen_aux);
+    anydb_t *dbh = luaL_checkudata(L, 1, SHELVE_REGISTRY_KEY);
+    k.dptr  = (char*) lua_tolstring(L, 2, &slen_aux);
     k.dsize = (int) slen_aux;
 
     d = anydb_fetch(*dbh, k);
-    lua_pop(L, 2);
-
-    if (!d.dptr) {
-        lua_pushnil(L);
-    }
-    else {
+    if (d.dptr) {
         const char *datap = d.dptr;
         if (!shelve_unmarshal(L, &datap)) {
             luaL_error(L, "bad format in encoded data");
         }
         free(d.dptr);
-        d.dptr = NULL;
+    } else {
+        lua_pushnil(L);
     }
     return 1;
 }
