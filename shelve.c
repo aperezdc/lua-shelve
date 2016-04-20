@@ -168,7 +168,6 @@ l_shelve_index(lua_State *L)
 {
     datum d, k;
     anydb_t *dbh;
-    const char *datap;
     size_t slen_aux;
 
     assert(L);
@@ -185,8 +184,7 @@ l_shelve_index(lua_State *L)
         lua_pushnil(L);
     }
     else {
-        datap = d.dptr;
-
+        const char *datap = d.dptr;
         if (!shelve_unmarshal(L, &datap)) {
             luaL_error(L, "bad format in encoded data");
         }
@@ -235,7 +233,6 @@ l_shelve_nindex(lua_State *L)
     free(d.dptr);
     d.dptr = NULL;
 
-    lua_pop(L, 3);
     return 0;
 }
 
