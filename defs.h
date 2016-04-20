@@ -56,29 +56,4 @@ static INLINE void* xmalloc(size_t sz)
 #define xfree(__p) \
     (free(__p), (__p) = NULL)
 
-
-/*
- * strdup() replacement
- */
-#if !defined(HAVE_STRDUP) && (defined(_OSX) || defined(_LINUX))
-# define HAVE_STRDUP
-#endif
-
-#if defined(HAVE_STRDUP) && defined(__GNUC__)
-# define xstrdup(__strp) \
-    ({ char *__$strp = strdup(__strp); \
-       (__$strp) ? : (__die("out of memory"), (char*)0); })
-#else
-# ifdef __GNUC__
-#  define xstrdup(__strp) \
-    ({ const char* __$strp = __strp; \
-       strcpy((char*) xmalloc(sizeof(char)*(strlen(__$strp)+1)), __$strp); })
-# else
-static INLINE char* xstrdup(const char *strp)
-{
-    return strcpy((char*) xmalloc(sizeof(char) * (strlen(strp) + 1)), strp);
-}
-# endif
-#endif
-
 #endif /* !__defs__h */

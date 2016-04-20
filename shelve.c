@@ -61,8 +61,7 @@ static int l_shelve_iter_gc(lua_State*);
 /* Lua userdata type */
 typedef struct shelve_file_t {
     anydb_t dbf;
-    char *fname;
-    int  rdonly;
+    int rdonly;
 } shelve_file;
 
 /* Metatable items */
@@ -129,15 +128,11 @@ int
 l_shelve_open(lua_State *L)
 {
     int flags = ANYDB_WRITE;
-    char *filename = NULL;
     shelve_file *udata = NULL;
     const char *rwmode = NULL;
     anydb_t dbh;
-    int n;
+    int n = lua_gettop(L);
 
-    assert(L);
-
-    n = lua_gettop(L);
     /* Check arguments. */
     if ((n != 1) && (n != 2)) {
         luaL_error(L, "function takes one or two arguments");
@@ -145,17 +140,12 @@ l_shelve_open(lua_State *L)
 
     /* Check & get second argument (if needed). */
     if (n == 2) {
-        rwmode = luaL_checkstring(L, -1);
+        rwmode = luaL_checkstring(L, 2);
         flags  = (*rwmode == 'r') ? ANYDB_READ : ANYDB_WRITE;
-        lua_pop(L, 1);
     }
 
-    /* Check & get DB file name. */
-    filename = xstrdup(luaL_checkstring(L, -1));
-    lua_pop(L, 1);
-
     /* Open the DB and remove filename from the stack. */
-    if ( !(dbh = anydb_open(filename, flags)) ) {
+    if (!(dbh = anydb_open(luaL_checkstring(L, 1), flags))) {
         lua_pushnil(L);
         lua_pushstring(L, strerror(errno));
         return 2;
@@ -163,7 +153,6 @@ l_shelve_open(lua_State *L)
 
     /* Configure returned userdata. */
     udata = (shelve_file*) lua_newuserdata(L, sizeof(shelve_file));
-    udata->fname  = filename;
     udata->dbf    = dbh;
     udata->rdonly = (flags == ANYDB_READ);
 
@@ -300,7 +289,6 @@ l_shelve_gc(lua_State *L)
     udata = (shelve_file*) lua_touserdata(L, -1);
     if (!udata->rdonly) anydb_reorganize(udata->dbf);
     anydb_close(udata->dbf);
-    xfree(udata->fname);
     lua_pop(L, 1);
     return 0;
 }
@@ -309,16 +297,9 @@ l_shelve_gc(lua_State *L)
 int
 l_shelve_tostring(lua_State *L)
 {
-    shelve_file *udata;
-
-    assert(L);
-    assert(lua_gettop(L) == 1);
-    assert(lua_isuserdata(L, -1));
-
-    udata = (shelve_file*) lua_touserdata(L, -1);
-    lua_pushfstring(L, "shelf (%s, %s)", udata->fname,
+    shelve_file *udata = luaL_checkudata(L, 1, SHELVE_REGISTRY_KEY);
+    lua_pushfstring(L, "shelf (%p, %s)", udata,
                     (udata->rdonly) ? "ro" : "rw");
-    lua_remove(L, -2);
     return 1;
 }
 
