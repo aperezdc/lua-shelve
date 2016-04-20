@@ -190,7 +190,8 @@ l_shelve_index(lua_State *L)
         if (!shelve_unmarshal(L, &datap)) {
             luaL_error(L, "bad format in encoded data");
         }
-        xfree(d.dptr);
+        free(d.dptr);
+        d.dptr = NULL;
     }
     return 1;
 }
@@ -227,10 +228,12 @@ l_shelve_nindex(lua_State *L)
     }
 
     if (anydb_store(udata->dbf, k, d, ANYDB_REPLACE) != 0) {
-        xfree(d.dptr);
+        free(d.dptr);
+        d.dptr = NULL;
         luaL_error(L, "cannot update item in data file");
     }
-    xfree(d.dptr);
+    free(d.dptr);
+    d.dptr = NULL;
 
     lua_pop(L, 3);
     return 0;
@@ -251,7 +254,7 @@ l_shelve_trv_next(lua_State *L)
         lua_pushlstring(L, i->k.dptr, (size_t) i->k.dsize);
         k = i->k;
         i->k = anydb_nextkey(*i->dbh, k);
-        xfree(k.dptr);
+        free(k.dptr);
         return 1;
     }
     return 0;
@@ -261,7 +264,8 @@ static int
 l_shelve_iter_gc(lua_State *L)
 {
     struct dbiter *i = (struct dbiter*) lua_touserdata(L, -1);
-    xfree(i->k.dptr);
+    free(i->k.dptr);
+    i->k.dptr = NULL;
 }
 
 int

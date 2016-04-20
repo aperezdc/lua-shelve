@@ -29,14 +29,13 @@ extern void exit();
     (fprintf(stderr, "fatal: %s\n", __str), exit(-1))
 
 /*
- * The xmalloc(), xrealloc() and xfree() act as expected, but they
+ * The xmalloc() and xrealloc() functions act as expected, but they
  * do pointer checks when needed. They are defined as inlines or
  * macros, so using them does not involve extra function calls.
  * "__inline" is used to prevent complains of old silly compilers.
  */
 extern void* malloc();
 extern void* realloc();
-extern void free();
 
 #ifdef __GNUC__
 # define INLINE inline
@@ -52,8 +51,5 @@ static INLINE void* xmalloc(size_t sz)
 
 #define xrealloc(__p, __nsz) \
     ((__p) = realloc(__p, __nsz), (__p) ? __p : (__die("out of memory"), (void*)0))
-
-#define xfree(__p) \
-    (free(__p), (__p) = NULL)
 
 #endif /* !__defs__h */
