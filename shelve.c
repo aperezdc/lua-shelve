@@ -185,39 +185,31 @@ int
 l_shelve_nindex(lua_State *L)
 {
     datum k, d = { NULL, 0 };
-    shelve_file *udata;
     size_t slen_aux;
+    shelve_file *shelf = luaL_checkudata(L, 1, SHELVE_REGISTRY_KEY);
 
-    assert(L);
-    assert(lua_gettop(L) == 3);
-    assert(lua_isuserdata(L, -3));
-
-    udata   = (shelve_file*) lua_touserdata(L, -3);
-    k.dptr  = (char*) lua_tolstring(L, -2, &slen_aux);
+    k.dptr  = (char*) lua_tolstring(L, 2, &slen_aux);
     k.dsize = (int) slen_aux;
 
-    if (udata->rdonly) {
+    if (shelf->rdonly) {
         luaL_error(L, "cannot modify read-only shelf datafile");
     }
 
-    if (lua_isnil(L, -1)) {
+    if (lua_isnil(L, 3)) {
         /* Remove key in database. */
-        anydb_delete(udata->dbf, k);
-        lua_pop(L, 3);
+        anydb_delete(shelf->dbf, k);
         return 0;
     }
 
     if (!shelve_marshal(L, &d.dptr, &d.dsize)) {
-        luaL_error(L, "cannot encode data");
+        return luaL_error(L, "cannot encode data");
     }
 
-    if (anydb_store(udata->dbf, k, d, ANYDB_REPLACE) != 0) {
+    if (anydb_store(shelf->dbf, k, d, ANYDB_REPLACE) != 0) {
         free(d.dptr);
-        d.dptr = NULL;
-        luaL_error(L, "cannot update item in data file");
+        return luaL_error(L, "cannot update item in data file");
     }
     free(d.dptr);
-    d.dptr = NULL;
 
     return 0;
 }
