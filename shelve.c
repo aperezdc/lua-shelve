@@ -48,20 +48,134 @@ luaL_setmetatable(lua_State *L, const char *name)
 #endif
 
 
-/* Function protos */
-static int shelve_index(lua_State*);
-static int shelve_newindex(lua_State*);
-static int shelve_call(lua_State*);
-static int shelve_gc(lua_State*);
-static int iterator_gc(lua_State*);
-static int shelve_tostring(lua_State*);
-static int shelve_module_open(lua_State*);
-
-
 struct Shelve {
     anydb_t db;
     int     ro;
 };
+
+struct Iterator {
+    anydb_t db;
+    datum k;
+};
+
+
+static int
+iterator_next(lua_State *L)
+{
+    struct Iterator *i = lua_touserdata(L, lua_upvalueindex(1));
+    if (i->k.dptr) {
+        datum k;
+        lua_pushlstring(L, i->k.dptr, (size_t) i->k.dsize);
+        k = i->k;
+        i->k = anydb_nextkey(i->db, k);
+        free(k.dptr);
+        return 1;
+    }
+    return 0;
+}
+
+static int
+iterator_gc(lua_State *L)
+{
+    struct Iterator *i = lua_touserdata(L, -1);
+    free(i->k.dptr);
+    i->k.dptr = NULL;
+}
+
+static luaL_Reg iterator_meta[] = {
+    { "__gc", iterator_gc },
+    { NULL,   NULL        },
+};
+
+
+static int
+shelve_index(lua_State *L)
+{
+    datum d, k;
+    size_t slen_aux;
+    struct Shelve *self = luaL_checkudata(L, 1, SHELVE_META);
+
+    k.dptr  = (char*) lua_tolstring(L, 2, &slen_aux);
+    k.dsize = (int) slen_aux;
+    d = anydb_fetch(self->db, k);
+
+    if (d.dptr) {
+        const char *datap = d.dptr;
+        if (!shelve_unmarshal(L, &datap)) {
+            luaL_error(L, "bad format in encoded data");
+        }
+        free(d.dptr);
+    } else {
+        lua_pushnil(L);
+    }
+    return 1;
+}
+
+static int
+shelve_newindex(lua_State *L)
+{
+    datum k, d = { NULL, 0 };
+    size_t slen_aux;
+    struct Shelve *self = luaL_checkudata(L, 1, SHELVE_META);
+
+    k.dptr  = (char*) lua_tolstring(L, 2, &slen_aux);
+    k.dsize = (int) slen_aux;
+
+    if (self->ro) {
+        return luaL_error(L, "cannot modify read-only shelf datafile");
+    }
+
+    if (lua_isnil(L, 3)) {
+        /* Remove key in database. */
+        anydb_delete(self->db, k);
+        return 0;
+    }
+
+    if (!shelve_marshal(L, &d.dptr, &d.dsize)) {
+        return luaL_error(L, "cannot encode data");
+    }
+
+    if (anydb_store(self->db, k, d, ANYDB_REPLACE) != 0) {
+        free(d.dptr);
+        return luaL_error(L, "cannot update item in data file");
+    }
+    free(d.dptr);
+
+    return 0;
+}
+
+static int
+shelve_call(lua_State *L)
+{
+    struct Shelve *self = luaL_checkudata(L, -1, SHELVE_META);
+
+    struct Iterator *i = lua_newuserdata(L, sizeof(struct Iterator));
+    i->k = anydb_firstkey(self->db);
+    i->db = self->db;
+    luaL_setmetatable(L, SHELVE_ITER_META);
+
+    lua_pushcclosure(L, iterator_next, 1);
+    return 1;
+}
+
+static int
+shelve_gc(lua_State *L)
+{
+    struct Shelve *self = luaL_checkudata(L, 1, SHELVE_META);
+    if (!self->ro) {
+        anydb_reorganize(self->db);
+    }
+    anydb_close(self->db);
+    return 0;
+}
+
+static int
+shelve_tostring(lua_State *L)
+{
+    struct Shelve *self = luaL_checkudata(L, 1, SHELVE_META);
+    lua_pushfstring(L, "shelve (%p, %s)", self->db, self->ro ? "ro" : "rw");
+    return 1;
+}
 
 static luaL_Reg shelve_meta[] = {
     { "__index",    shelve_index    },
@@ -71,57 +185,6 @@ static luaL_Reg shelve_meta[] = {
     { "__tostring", shelve_tostring },
     { NULL,         NULL            },
 };
-
-
-struct Iterator {
-    anydb_t db;
-    datum k;
-};
-
-static luaL_Reg iterator_meta[] = {
-    { "__gc", iterator_gc },
-    { NULL,   NULL        },
-};
-
-
-static luaL_Reg shelve_module[] = {
-    { "open",      shelve_module_open      },
-    { "marshal",   shelve_module_marshal   },
-    { "unmarshal", shelve_module_unmarshal },
-    { NULL,        NULL                    },
-};
-
-
-LUALIB_API int
-luaopen_shelve(lua_State *L)
-{
-    assert(L);
-
-    /* Shelve file metatable */
-    luaL_newmetatable(L, SHELVE_META);
-#if LUA_VERSION_NUM < 502
-    luaL_register(L, NULL, shelve_meta);
-#else
-    luaL_setfuncs(L, shelve_meta, 0);
-#endif
-
-    /* Shelve file iterator metatable */
-    luaL_newmetatable(L, SHELVE_ITER_META);
-#if LUA_VERSION_NUM < 502
-    luaL_register(L, NULL, iterator_meta);
-#else
-    luaL_setfuncs(L, iterator_meta, 0);
-#endif
-
-    /* Module */
-#if LUA_VERSION_NUM < 502
-    luaL_register(L, "shelve", shelve_module);
-#else
-    luaL_newlib(L, shelve_module);
-#endif
-
-    return 1;
-}
 
 
 static int
@@ -161,119 +224,41 @@ shelve_module_open(lua_State *L)
     return 1;
 }
 
+static luaL_Reg shelve_module[] = {
+    { "open",      shelve_module_open      },
+    { "marshal",   shelve_module_marshal   },
+    { "unmarshal", shelve_module_unmarshal },
+    { NULL,        NULL                    },
+};
 
-static int
-shelve_index(lua_State *L)
+
+LUALIB_API int
+luaopen_shelve(lua_State *L)
 {
-    datum d, k;
-    size_t slen_aux;
-    struct Shelve *self = luaL_checkudata(L, 1, SHELVE_META);
+    assert(L);
 
-    k.dptr  = (char*) lua_tolstring(L, 2, &slen_aux);
-    k.dsize = (int) slen_aux;
-    d = anydb_fetch(self->db, k);
+    /* Shelve file metatable */
+    luaL_newmetatable(L, SHELVE_META);
+#if LUA_VERSION_NUM < 502
+    luaL_register(L, NULL, shelve_meta);
+#else
+    luaL_setfuncs(L, shelve_meta, 0);
+#endif
 
-    if (d.dptr) {
-        const char *datap = d.dptr;
-        if (!shelve_unmarshal(L, &datap)) {
-            luaL_error(L, "bad format in encoded data");
-        }
-        free(d.dptr);
-    } else {
-        lua_pushnil(L);
-    }
-    return 1;
-}
+    /* Shelve file iterator metatable */
+    luaL_newmetatable(L, SHELVE_ITER_META);
+#if LUA_VERSION_NUM < 502
+    luaL_register(L, NULL, iterator_meta);
+#else
+    luaL_setfuncs(L, iterator_meta, 0);
+#endif
 
+    /* Module */
+#if LUA_VERSION_NUM < 502
+    luaL_register(L, "shelve", shelve_module);
+#else
+    luaL_newlib(L, shelve_module);
+#endif
 
-static int
-shelve_newindex(lua_State *L)
-{
-    datum k, d = { NULL, 0 };
-    size_t slen_aux;
-    struct Shelve *self = luaL_checkudata(L, 1, SHELVE_META);
-
-    k.dptr  = (char*) lua_tolstring(L, 2, &slen_aux);
-    k.dsize = (int) slen_aux;
-
-    if (self->ro) {
-        return luaL_error(L, "cannot modify read-only shelf datafile");
-    }
-
-    if (lua_isnil(L, 3)) {
-        /* Remove key in database. */
-        anydb_delete(self->db, k);
-        return 0;
-    }
-
-    if (!shelve_marshal(L, &d.dptr, &d.dsize)) {
-        return luaL_error(L, "cannot encode data");
-    }
-
-    if (anydb_store(self->db, k, d, ANYDB_REPLACE) != 0) {
-        free(d.dptr);
-        return luaL_error(L, "cannot update item in data file");
-    }
-    free(d.dptr);
-
-    return 0;
-}
-
-
-static int
-iterator_next(lua_State *L)
-{
-    struct Iterator *i = lua_touserdata(L, lua_upvalueindex(1));
-    if (i->k.dptr) {
-        datum k;
-        lua_pushlstring(L, i->k.dptr, (size_t) i->k.dsize);
-        k = i->k;
-        i->k = anydb_nextkey(i->db, k);
-        free(k.dptr);
-        return 1;
-    }
-    return 0;
-}
-
-static int
-iterator_gc(lua_State *L)
-{
-    struct Iterator *i = lua_touserdata(L, -1);
-    free(i->k.dptr);
-    i->k.dptr = NULL;
-}
-
-static int
-shelve_call(lua_State *L)
-{
-    struct Shelve *self = luaL_checkudata(L, -1, SHELVE_META);
-
-    struct Iterator *i = lua_newuserdata(L, sizeof(struct Iterator));
-    i->k = anydb_firstkey(self->db);
-    i->db = self->db;
-    luaL_setmetatable(L, SHELVE_ITER_META);
-
-    lua_pushcclosure(L, iterator_next, 1);
-    return 1;
-}
-
-
-static int
-shelve_gc(lua_State *L)
-{
-    struct Shelve *self = luaL_checkudata(L, 1, SHELVE_META);
-    if (!self->ro) {
-        anydb_reorganize(self->db);
-    }
-    anydb_close(self->db);
-    return 0;
-}
-
-
-static int
-shelve_tostring(lua_State *L)
-{
-    struct Shelve *self = luaL_checkudata(L, 1, SHELVE_META);
-    lua_pushfstring(L, "shelve (%p, %s)", self->db, self->ro ? "ro" : "rw");
     return 1;
 }
