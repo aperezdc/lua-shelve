@@ -27,16 +27,31 @@
 #include "shelve.h"
 #include "anydb.h"
 
+/*
+ * LuaJIT defines LUA_LJDIR in <luaconf.h>, which is always included
+ * indirectly, so when the symbol is available we know that <luajit.h>
+ * is also around and can be included to check LUAJIT_VERSION_NUM below.
+ */
+#ifdef LUA_LJDIR
+# include <luajit.h>
+#endif
+
+#if defined(LUAJIT_VERSION_NUM) && LUAJIT_VERSION_NUM >= 20100
+# define SHELVE_HAVE_LUAL_SETMETATABLE
+#elif LUA_VERSION_NUM >= 502
+# define SHELVE_HAVE_LUAL_SETMETATABLE
+#else
+# undef SHELVE_HAVE_LUAL_SETMETATABLE
+#endif
 
 static const char SHELVE_META[]      = "shelve-file-meta";
 static const char SHELVE_ITER_META[] = "shelve-file-iter-meta";
-
 
 #ifndef LUALIB_API
 # define LUALIB_API API
 #endif
 
-#if (LUA_VERSION_NUM < 502 && (defined(LUAJIT_VERSION_NUM) && LUAJIT_VERSION_NUM < 20100))
+#ifndef SHELVE_HAVE_LUAL_SETMETATABLE
 static void
 luaL_setmetatable(lua_State *L, const char *name)
 {
