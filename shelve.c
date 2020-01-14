@@ -80,6 +80,7 @@ iterator_gc(lua_State *L)
     struct Iterator *i = lua_touserdata(L, -1);
     free(i->k.dptr);
     i->k.dptr = NULL;
+    return 0;
 }
 
 static luaL_Reg iterator_meta[] = {
