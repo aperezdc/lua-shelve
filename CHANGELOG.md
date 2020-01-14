@@ -5,6 +5,14 @@ project adheres to [Semantic Versioning](http://semver.org).
 
 ## [Unreleased]
 
+## [v0.35.2] - 2020-01-14
+### Changed
+- The `__tostring` metamethod for a shelve userdata no longer includes the
+  file name of the shelve in the values it returns.
+
+### Fixed
+- The module can now be built and used with LuaJIT 2.0 and 2.1.
+
 ## [v0.35.1] - 2016-04-18
 ### Changed
 - The `__call` metamethod for a shelve userdata now returns an iterator
@@ -28,7 +36,8 @@ project adheres to [Semantic Versioning](http://semver.org).
 - Removed unneeded `xfree(udata)` in the `__gc` metamethod of the shelve type.
   This caused occassional segmentation faults.
 
-[Unreleased]: https://github.com/aperezdc/lua-shelve/compare/v0.35.1...HEAD
-[v0.35.0]: https://github.com/aperezdc/lua-shelve/compare/v0.35.0...v0.35.1
+[Unreleased]: https://github.com/aperezdc/lua-shelve/compare/v0.35.2...HEAD
+[v0.35.2]: https://github.com/aperezdc/lua-shelve/compare/v0.35.1...v0.35.2
+[v0.35.1]: https://github.com/aperezdc/lua-shelve/compare/v0.35.0...v0.35.1
 [v0.35.0]: https://github.com/aperezdc/lua-shelve/compare/v0.34...v0.35.0
 [v0.34]: https://github.com/aperezdc/lua-shelve/compare/v0.33...v0.34
