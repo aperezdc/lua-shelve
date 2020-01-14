@@ -1,8 +1,8 @@
 package = "shelve"
-version = "0.35.2-1"
+version = "0.35.3-1"
 source = {
    url = "git://github.com/aperezdc/lua-shelve",
-   tag = "v0.35.2"
+   tag = "v0.35.3"
 }
 description = {
    summary = "Serialization and on-disk persistence for Lua values",

@@ -5,6 +5,10 @@ project adheres to [Semantic Versioning](http://semver.org).
 
 ## [Unreleased]
 
+## [v0.35.3] - 2020-01-14
+### Fixed
+- Make it possible to build again with LuaJIT 2.1
+
 ## [v0.35.2] - 2020-01-14
 ### Changed
 - The `__tostring` metamethod for a shelve userdata no longer includes the
@@ -36,7 +40,8 @@ project adheres to [Semantic Versioning](http://semver.org).
 - Removed unneeded `xfree(udata)` in the `__gc` metamethod of the shelve type.
   This caused occassional segmentation faults.
 
-[Unreleased]: https://github.com/aperezdc/lua-shelve/compare/v0.35.2...HEAD
+[Unreleased]: https://github.com/aperezdc/lua-shelve/compare/v0.35.3...HEAD
+[v0.35.3]: https://github.com/aperezdc/lua-shelve/compare/v0.35.2...v0.35.3
 [v0.35.2]: https://github.com/aperezdc/lua-shelve/compare/v0.35.1...v0.35.2
 [v0.35.1]: https://github.com/aperezdc/lua-shelve/compare/v0.35.0...v0.35.1
 [v0.35.0]: https://github.com/aperezdc/lua-shelve/compare/v0.34...v0.35.0
