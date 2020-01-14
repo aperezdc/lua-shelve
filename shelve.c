@@ -36,7 +36,7 @@ static const char SHELVE_ITER_META[] = "shelve-file-iter-meta";
 # define LUALIB_API API
 #endif
 
-#if LUA_VERSION_NUM < 502
+#if (LUA_VERSION_NUM < 502 && (defined(LUAJIT_VERSION_NUM) && LUAJIT_VERSION_NUM < 20100))
 static void
 luaL_setmetatable(lua_State *L, const char *name)
 {
