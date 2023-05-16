@@ -1,7 +1,6 @@
 # Lua Shelve Module
 
-[![Build
-Status](https://img.shields.io/travis/aperezdc/lua-shelve.svg?style=flat)](https://travis-ci.org/aperezdc/lua-shelve)
+[![CI Status](https://github.com/aperezdc/lua-shelve/actions/workflows/ci.yml/badge.svg)](https://github.com/aperezdc/lua-shelve/actions/workflows/ci.yml)
 
 This is a Lua module that uses either GNU Gdbm or the more standard Ndbm
 database libraries to store  data in files, but this data is saved in
