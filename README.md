@@ -172,3 +172,15 @@ values will only return the first one.
   handles.
 - Trying to encode a table that has references to itself produces an infinite
   loop recursion, thus a hang or a stack overflow will occur.
+
+
+## Strict No LLM / No AI Policy
+
+No LLMs for issues.
+
+No LLMs for pull requests.
+
+No LLMs for comments on the bug tracker, including translation. English
+is encouraged, but not required. You are welcome to post in your native
+language and rely on others to have their own translation tools of choice
+to interpret your words.
